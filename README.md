@@ -140,28 +140,6 @@ sample2  5000   chr17    45878152   46000000   0.10,0.22,0.32,0.14,0.07
 
 ---
 
-## 🚀 Development & Contribution
-
-### **1️⃣ Clone the Repository**
-```bash
-git clone https://github.com/yourusername/V4C.git
-cd V4C
-pip install -e .
-```
-
-### **2️⃣ Run Tests**
-```bash
-pytest tests/
-```
-
-### **3️⃣ Submit a Pull Request**
-- Fork the repository
-- Create a new branch (`feature-x`)
-- Make your changes and push to GitHub
-- Open a Pull Request
-
----
-
 ## 💜 License
 **V4C** is released under the MIT License. See [LICENSE](LICENSE) for details.
 
@@ -170,5 +148,5 @@ pytest tests/
 ## 📞 Contact
 For issues and discussions, visit the [GitHub Issues](https://github.com/yourusername/V4C/issues) page.
 
-📧 **Email**: your.email@example.com  
-🏡 **GitHub**: [yourusername](https://github.com/yourusername)
+📧 **Email**:zoe.chen2@ucsf.com  
+🏡 **GitHub**: [zoechen0717](https://github.com/zoechen0717)
