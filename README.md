@@ -12,11 +12,12 @@
 - **Compare multiple Hi-C datasets** to visualize differences across conditions.
 
 The package supports:
-✅ **Command-line usage** and **Python API**  
-✅ **Custom genomic coordinates or default promoter regions (hg38/hg19)**  
-✅ **Multiple `.mcool` inputs & resolutions**  
-✅ **ICE balancing and Min-Max normalization**  
-✅ **Custom upstream/downstream window size**  
+
+- **Command-line usage** and **Python API**  
+- **Custom genomic coordinates or default promoter regions (hg38/hg19)**  
+- **Multiple `.mcool` inputs & resolutions**  
+- **ICE balancing and Min-Max normalization**  
+- **Custom upstream/downstream window size**  
 
 ---
 
@@ -74,7 +75,7 @@ v4c-extract --mcool sample1.mcool sample2.mcool \
             --output extracted_data.tsv
 ```
 
-#### **✅ Explanation of Options**
+#### **Explanation of Options**
 | Argument | Description |
 |----------|-------------|
 | `--mcool` | One or multiple `.mcool` files to process |
@@ -100,7 +101,7 @@ v4c-plot --input extracted_data.tsv --ylim 0.4 --flank 50000
 | Argument | Description |
 |----------|-------------|
 | `--input` | Extracted `.tsv` file from `v4c-extract` |
-| `--ylim` | Maximum y-axis value (default: `0.4`) |
+| `--ylim` | Maximum y-axis value (default: `1`) |
 | `--flank` | Flanking region in bp |
 
 ---
@@ -110,7 +111,7 @@ Compare **multiple Hi-C datasets** in the same figure.
 
 ```bash
 v4c-compare --inputs extracted_data1.tsv extracted_data2.tsv \
-            --ylim 0.4 \
+            --ylim 1 \
             --scale True
 ```
 
