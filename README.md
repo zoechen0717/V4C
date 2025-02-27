@@ -1,7 +1,7 @@
 
 
 # V4C - Virtual 4C Analysis for Hi-C Data
-![BuildStatus](https://github.com/zoechen0717/BMI203-HW4-Clustering/workflows/badge.svg?event=push)
+![Build Status](https://github.com/zoechen0717/BMI203-HW4-Clustering/actions/workflows/test.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python Version](https://img.shields.io/badge/python-3.6%2B-blue)](https://www.python.org/downloads/)
 
