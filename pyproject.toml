@@ -1,25 +1,11 @@
 [build-system]
-requires = [
-    "flit_core >=3.2,<4"
-]
-build-backend = "flit_core.buildapi"
-
-[tool.pytest.ini_options]
-pythonpath = [
-  "."
-]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "Vitural_4c"
-authors = [{name = "Zoe Chen", email = "zoe.chen2@ucsf.edu"}]
-readme = "README.md"
-license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: MIT License"]
-dynamic = ["version", "description"]
-dependencies = [
-    "pytest"
-]
-requires-python = ">=3.9"
-
-[project.urls]
-Home = "https://github.com/zoechen0717/BMI203-HW4-Clustering"
+name = "v4c"
+version = "0.1.0"
+description = "Virtual 4C analysis package for Hi-C contact frequency extraction and visualization."
+authors = [{name = "Zoe Chen", email = "zoe.chen2@ucsf.com"}]
+dependencies = ["numpy", "pandas", "matplotlib", "cooler", "argparse"]
+requires-python = ">=3.6"

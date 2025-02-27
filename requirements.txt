@@ -1,5 +1,6 @@
 pytest
 numpy
-scipy
+pandas
 matplotlib
 cooler
+argparse
