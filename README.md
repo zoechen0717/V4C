@@ -129,6 +129,22 @@ v4c-compare --inputs extracted_data1.tsv extracted_data2.tsv \
 
 ---
 
+### **Convert `.hic` to `.mcool`**
+Convert `.hic` files to `.mcool` format for compatibility with `V4C` analysis.
+
+```bash
+v4c-convert --hic sample.hic --output mcool_files --resolutions 5000 10000
+```
+
+#### **✅ Explanation of Options**
+| Argument | Description |
+|----------|-------------|
+| `--hic` | Input `.hic` file to convert |
+| `--output` | Directory to save the `.mcool` file |
+| `--resolutions` | List of resolutions to extract (e.g., 5000, 10000) |
+
+---
+
 # 📂 Example Output
 
 ### **Extracted Data (`extracted_data.tsv`)**
