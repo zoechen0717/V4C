@@ -27,7 +27,8 @@ setup(
         "console_scripts": [
             "v4c-extract = v4c.extract:main",
             "v4c-plot = v4c.plot:main",
-            "v4c-compare = v4c.compare:main"
+            "v4c-compare = v4c.compare:main",
+            "v4c-convert = v4c.convert:main"
         ]
     },
 )

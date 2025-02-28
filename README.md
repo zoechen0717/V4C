@@ -56,6 +56,11 @@ Install them manually if needed:
 pip install numpy pandas matplotlib cooler argparse
 ```
 
+Install hic2cool if you have .hic files:
+```bash
+pip install hic2cool
+```
+
 ---
 
 # 👉 Command-Line Usage

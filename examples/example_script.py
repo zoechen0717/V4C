@@ -21,4 +21,4 @@ v4c.plot_v4c(output_file, ylim=0.4, flank=50000)
 
 # Step 3: Compare multiple datasets
 print("Comparing multiple datasets...")
-v4c.compare_v4c(["extracted_data1.tsv", "extracted_data2.tsv"], ylim=0.4, sca
+v4c.compare_v4c(["extracted_data1.tsv", "extracted_data2.tsv"], ylim=0.4, scale=True)
