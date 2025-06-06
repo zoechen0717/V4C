@@ -1,11 +1,69 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=42", "wheel", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "v4c"
 version = "0.1.0"
-description = "Virtual 4C analysis package for Hi-C contact frequency extraction and visualization."
-authors = [{name = "Zoe Chen", email = "zoe.chen2@ucsf.com"}]
-dependencies = ["numpy", "pandas", "matplotlib", "cooler", "argparse"]
+description = "Virtual 4C Analysis for Hi-C Data"
+readme = "README.md"
 requires-python = ">=3.6"
+license = {text = "MIT"}
+authors = [
+    {name = "Zoe Chen", email = "zoe.chen2@ucsf.edu"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.19.0",
+    "pandas>=1.0.0",
+    "matplotlib>=3.0.0",
+    "cooler>=0.8.0",
+    "argparse>=1.4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/zoechen0717/V4C"
+Documentation = "https://v4c.readthedocs.io/"
+Repository = "https://github.com/zoechen0717/V4C.git"
+Issues = "https://github.com/zoechen0717/V4C/issues"
+
+[project.scripts]
+v4c-extract = "v4c.extract:main"
+v4c-plot = "v4c.plot:main"
+v4c-compare = "v4c.compare:main"
+v4c-convert = "v4c.convert:main"
+
+[tool.setuptools]
+packages = ["v4c"]
+
+[tool.black]
+line-length = 88
+target-version = ['py36', 'py37', 'py38', 'py39']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.mypy]
+python_version = "3.6"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=v4c --cov-report=term-missing"
