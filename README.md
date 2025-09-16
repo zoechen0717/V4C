@@ -42,7 +42,7 @@ You can also convert pairs format to .mcool using cooler tools or the hic2cool p
 ### Install from source
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/zoechen0717/V4C
 cd V4C
 pip install -e .
 ```
