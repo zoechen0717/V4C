@@ -24,7 +24,8 @@ def validate_inputs(mcool_files: List[str],
                    coords: Optional[str], 
                    genes: Optional[str], 
                    genome: Optional[str], 
-                   bed_file: Optional[str]) -> None:
+                   bed_file: Optional[str],
+                   normalization_method: str = "minmax") -> None:
     """
     Validates input parameters for extract_v4c function.
     
@@ -35,6 +36,7 @@ def validate_inputs(mcool_files: List[str],
         genes: Comma-separated gene names
         genome: Reference genome version
         bed_file: Path to BED file
+        normalization_method: Normalization method ("minmax" or "self")
         
     Raises:
         InputValidationError: If any input parameter is invalid
@@ -66,6 +68,10 @@ def validate_inputs(mcool_files: List[str],
     # Validate bed file
     if bed_file and not os.path.exists(bed_file):
         raise InputValidationError(f"BED file not found: {bed_file}")
+    
+    # Validate normalization method
+    if normalization_method not in ["minmax", "self"]:
+        raise InputValidationError(f"Invalid normalization method: {normalization_method}. Must be 'minmax' or 'self'")
 
 def extract_v4c(mcool_files: List[str], 
                 resolutions: List[int], 
@@ -73,9 +79,11 @@ def extract_v4c(mcool_files: List[str],
                 genes: Optional[str] = None, 
                 genome: Optional[str] = None, 
                 bed_file: Optional[str] = None, 
-                flank: int = 50000, 
+                flank: int = 500000, 
                 balance: bool = True, 
                 scale: bool = True, 
+                normalization_method: str = "minmax",
+                use_fixed_center: bool = False,
                 output: str = "extracted_data.tsv") -> None:
     """
     Extracts Virtual 4C contact frequencies from .mcool files at specific resolutions.
@@ -87,9 +95,11 @@ def extract_v4c(mcool_files: List[str],
         genes: Comma-separated gene names to extract promoter coordinates
         genome: Reference genome ("hg38" or "hg19")
         bed_file: Custom BED file for genomic coordinates
-        flank: Number of base pairs to extend upstream and downstream
+        flank: Number of base pairs to extend upstream and downstream (default: 500000)
         balance: Whether to use ICE balancing
         scale: Whether to normalize values between 0 and 1
+        normalization_method: Normalization method - "minmax" or "self" (default: "minmax")
+        use_fixed_center: Whether to use fixed center position calculation like original code (default: False)
         output: Output file name
 
     Returns:
@@ -102,7 +112,7 @@ def extract_v4c(mcool_files: List[str],
     """
     try:
         # Validate inputs
-        validate_inputs(mcool_files, resolutions, coords, genes, genome, bed_file)
+        validate_inputs(mcool_files, resolutions, coords, genes, genome, bed_file, normalization_method)
         
         # Validate mcool files exist
         valid_mcool_files = validate_mcool_files(mcool_files)
@@ -110,17 +120,41 @@ def extract_v4c(mcool_files: List[str],
             raise FileProcessingError("No valid mcool files found")
 
         promoter_coords = []
+        gene_mapping = {}  # Map coordinates to gene names
 
         if genes and genome:
             gene_list = genes.split(",")  # Split comma-separated gene names
             for gene in gene_list:
-                promoter_coords.extend(get_promoter_coords(genome, gene=gene.strip()))
+                gene = gene.strip()
+                coords = get_promoter_coords(genome, gene=gene)
+                promoter_coords.extend(coords)
+                # Map each coordinate to the gene name
+                for coord in coords:
+                    gene_mapping[tuple(coord)] = gene
         elif genome and coords:
             chrom, start, end = coords.split(":")[0], int(coords.split(":")[1].split("-")[0]), int(coords.split(":")[1].split("-")[1])
-            promoter_coords = get_promoter_coords(genome, chrom, start, end)
+            # For coordinate input, use the center point as the TSS
+            center = (start + end) // 2
+            promoter_coords = [(chrom, center, center)]
         elif bed_file:
             try:
-                promoter_coords = pd.read_csv(bed_file, sep="\t", header=None, names=["chrom", "start", "end"]).values.tolist()
+                # Read BED file and determine number of columns
+                bed_df = pd.read_csv(bed_file, sep="\t", header=None)
+                
+                if len(bed_df.columns) >= 4:
+                    # BED file has 4+ columns (chrom, start, end, gene_name, ...)
+                    bed_df.columns = ["chrom", "start", "end", "gene_name"] + [f"col_{i}" for i in range(4, len(bed_df.columns))]
+                    promoter_coords = bed_df[["chrom", "start", "end"]].values.tolist()
+                    # Map coordinates to gene names
+                    for i, row in bed_df.iterrows():
+                        coord_tuple = (row["chrom"], row["start"], row["end"])
+                        gene_mapping[coord_tuple] = row["gene_name"]
+                else:
+                    # BED file has only 3 columns (chrom, start, end)
+                    bed_df.columns = ["chrom", "start", "end"]
+                    promoter_coords = bed_df[["chrom", "start", "end"]].values.tolist()
+                    # No gene names available, leave gene_mapping empty
+                    
             except Exception as e:
                 raise FileProcessingError(f"Error reading BED file: {str(e)}")
         else:
@@ -133,24 +167,75 @@ def extract_v4c(mcool_files: List[str],
                 try:
                     c = cooler.Cooler(f"{mcool}::/resolutions/{res}")
                     for chrom, start, end in promoter_coords:
-                        region_start = max(0, start - flank)
-                        region_end = end + flank
+                        # Calculate region boundaries
+                        if use_fixed_center:
+                            # Use original code logic: fixed 500kb flanking from TSS
+                            row_bin_start = (start // res) * res
+                            region_start = max(0, row_bin_start - flank)
+                            region_end = row_bin_start + flank
+                        else:
+                            # Use current logic: flanking from TSS region
+                            region_start = max(0, start - flank)
+                            region_end = end + flank
+                        
                         matrix = c.matrix(balance=balance, sparse=False).fetch((chrom, region_start, region_end))
+                        np.nan_to_num(matrix, copy=False)
 
-                        row_index = (start // res) - (region_start // res)
+                        # Calculate row index
+                        if use_fixed_center:
+                            # Use original code logic: fixed center position
+                            row_index = (flank // res)
+                        else:
+                            # Use current logic: relative to TSS position
+                            row_index = (start // res) - (region_start // res)
+                        
                         row_values = matrix[row_index, :].tolist()
 
+                        # Apply normalization
                         if scale:
-                            min_val, max_val = np.min(row_values), np.max(row_values)
-                            row_values = [(x - min_val) / (max_val - min_val) if max_val > min_val else 0 for x in row_values]
+                            if normalization_method == "self":
+                                # Original code self-normalization
+                                if row_values[row_index] > 0:
+                                    row_values = [x / row_values[row_index] for x in row_values]
+                                else:
+                                    row_values = [0] * len(row_values)
+                            else:  # minmax normalization
+                                min_val, max_val = np.min(row_values), np.max(row_values)
+                                row_values = [(x - min_val) / (max_val - min_val) if max_val > min_val else 0 for x in row_values]
 
                         genomic_coords = np.arange(region_start, region_end, res)
-                        results.append([mcool, res, chrom, start, end] + row_values)
+                        # Add gene name if available
+                        gene_name = gene_mapping.get((chrom, start, end), "")
+                        results.append([mcool, res, chrom, start, end, gene_name] + row_values)
                 except Exception as e:
                     raise FileProcessingError(f"Error processing file {mcool} at resolution {res}: {str(e)}")
 
         try:
             df = pd.DataFrame(results)
+            # Add column names
+            if len(results) > 0:
+                num_contact_cols = len(results[0]) - 6  # 6 metadata columns (added gene_name)
+                # Generate genomic coordinate column names
+                # Get the first row to determine the genomic region
+                first_row = results[0]
+                chrom, start, end, resolution = first_row[2], first_row[3], first_row[4], first_row[1]
+                
+                # Calculate the genomic coordinates for each contact column
+                contact_cols = []
+                for i in range(num_contact_cols):
+                    # Calculate the genomic position for this contact bin
+                    # The contact data spans from (start - flank) to (end + flank)
+                    total_region_start = start - flank
+                    bin_position = total_region_start + (i * resolution)
+                    contact_cols.append(str(bin_position))
+                
+                column_names = ["mcool", "res", "chrom", "start", "end", "gene_name"] + contact_cols
+                # Ensure column names match DataFrame columns
+                if len(column_names) == len(df.columns):
+                    df.columns = column_names
+                else:
+                    # Fallback: use proper column names
+                    df.columns = ["mcool", "res", "chrom", "start", "end", "gene_name"] + [f"contact_{i}" for i in range(len(df.columns) - 6)]
             df.to_csv(output, sep="\t", index=False)
         except Exception as e:
             raise FileProcessingError(f"Error saving results to {output}: {str(e)}")
@@ -169,9 +254,11 @@ def main():
     parser.add_argument("--genes", help="Comma-separated gene names")
     parser.add_argument("--genome", choices=["hg38", "hg19"], help="Reference genome version")
     parser.add_argument("--bed", help="Path to BED file")
-    parser.add_argument("--flank", type=int, default=50000, help="Number of base pairs to extend upstream and downstream")
+    parser.add_argument("--flank", type=int, default=500000, help="Number of base pairs to extend upstream and downstream (default: 500000)")
     parser.add_argument("--no-balance", action="store_true", help="Disable ICE balancing")
     parser.add_argument("--no-scale", action="store_true", help="Disable normalization between 0 and 1")
+    parser.add_argument("--normalization", choices=["minmax", "self"], default="minmax", help="Normalization method: 'minmax' or 'self' (default: minmax)")
+    parser.add_argument("--use-fixed-center", action="store_true", help="Use fixed center position calculation like original code")
     parser.add_argument("--output", default="extracted_data.tsv", help="Output file name")
 
     args = parser.parse_args()
@@ -187,6 +274,8 @@ def main():
             flank=args.flank,
             balance=not args.no_balance,
             scale=not args.no_scale,
+            normalization_method=args.normalization,
+            use_fixed_center=args.use_fixed_center,
             output=args.output
         )
     except V4CError as e:
