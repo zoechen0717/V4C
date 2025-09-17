@@ -55,7 +55,7 @@ pip install -e .
 
 1. **Extract Virtual 4C data**:
 ```bash
-v4c-extract sample.mcool --resolutions 5000 10000 --genes MYC,DDX11L1 --genome hg38 --output data.tsv
+v4c-extract sample.mcool --resolution 5000 --genes MYC,DDX11L1 --genome hg38 --output data.tsv
 ```
 
 2. **Plot individual samples**:
@@ -76,7 +76,7 @@ Extract Virtual 4C contact frequencies from .mcool files.
 
 **Required arguments**:
 - `mcool_files`: One or more .mcool files
-- `--resolutions`: List of resolutions to extract (e.g., 5000 10000 50000)
+- `--resolution`: Single resolution to extract (e.g., 5000, 10000, 50000)
 
 **Input options** (choose one):
 - `--genes`: Comma-separated gene names (requires --genome)
@@ -95,16 +95,16 @@ Extract Virtual 4C contact frequencies from .mcool files.
 **Examples**:
 ```bash
 # Extract by gene names
-v4c-extract sample.mcool --resolutions 5000 10000 --genes MYC,DDX11L1 --genome hg38 --flank 500000 --normalization minmax --output data.tsv
+v4c-extract sample.mcool --resolution 5000 --genes MYC,DDX11L1 --genome hg38 --flank 500000 --normalization minmax --output data.tsv
 
 # Extract by coordinates
-v4c-extract sample.mcool --resolutions 50000 --coords chr8:127732934-127737934 --genome hg38 --output data.tsv
+v4c-extract sample.mcool --resolution 50000 --coords chr8:127732934-127737934 --genome hg38 --output data.tsv
 
 # Extract from BED file (3 columns: chrom, start, end)
-v4c-extract sample.mcool --resolutions 50000 --bed regions.bed --output data.tsv
+v4c-extract sample.mcool --resolution 50000 --bed regions.bed --output data.tsv
 
 # Extract from BED file (4 columns: chrom, start, end, gene_name)
-v4c-extract sample.mcool --resolutions 50000 --bed genes.bed --output data.tsv
+v4c-extract sample.mcool --resolution 50000 --bed genes.bed --output data.tsv
 ```
 
 ### v4c-plot
@@ -182,21 +182,21 @@ Choose your input method:
 
 **Method 1: Gene names** (recommended for most users)
 ```bash
-v4c-extract sample.mcool --resolutions 5000 10000 --genes MYC,GATA6,KLF5 --genome hg38 --flank 500000 --normalization minmax --output extracted_data.tsv
+v4c-extract sample.mcool --resolution 5000 --genes MYC,GATA6,KLF5 --genome hg38 --flank 500000 --normalization minmax --output extracted_data.tsv
 ```
 
 **Method 2: Genomic coordinates**
 ```bash
-v4c-extract sample.mcool --resolutions 50000 --coords chr8:127732934-127737934 --genome hg38 --flank 500000 --output extracted_data.tsv
+v4c-extract sample.mcool --resolution 50000 --coords chr8:127732934-127737934 --genome hg38 --flank 500000 --output extracted_data.tsv
 ```
 
 **Method 3: BED file**
 ```bash
 # 3-column BED file (chrom, start, end)
-v4c-extract sample.mcool --resolutions 50000 --bed regions.bed --flank 500000 --output extracted_data.tsv
+v4c-extract sample.mcool --resolution 50000 --bed regions.bed --flank 500000 --output extracted_data.tsv
 
 # 4-column BED file (chrom, start, end, gene_name)
-v4c-extract sample.mcool --resolutions 50000 --bed genes.bed --flank 500000 --output extracted_data.tsv
+v4c-extract sample.mcool --resolution 50000 --bed genes.bed --flank 500000 --output extracted_data.tsv
 ```
 
 ### Step 3: Visualize Results
@@ -263,7 +263,7 @@ normalized_value = value / viewpoint_value
 2. **File not found**: Check file paths and ensure .mcool files exist
 3. **Wrong file format**: V4C requires .mcool files. Convert .hic files using [hic2cool](https://github.com/4dn-dcic/hic2cool)
 4. **Out of bounds errors**: Some genomic regions may be outside Hi-C data coverage
-5. **Memory issues**: Use higher resolutions (e.g., 50000 instead of 5000) for large datasets
+5. **Memory issues**: Use higher resolution (e.g., 50000 instead of 5000) for large datasets
 
 ### Getting Help
 

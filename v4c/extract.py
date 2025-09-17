@@ -20,7 +20,7 @@ class FileProcessingError(V4CError):
     pass
 
 def validate_inputs(mcool_files: List[str], 
-                   resolutions: List[int], 
+                   resolution: int, 
                    coords: Optional[str], 
                    genes: Optional[str], 
                    genome: Optional[str], 
@@ -31,7 +31,7 @@ def validate_inputs(mcool_files: List[str],
     
     Args:
         mcool_files: List of .mcool files
-        resolutions: List of resolutions
+        resolution: Single resolution to extract
         coords: Genomic coordinates
         genes: Comma-separated gene names
         genome: Reference genome version
@@ -45,11 +45,9 @@ def validate_inputs(mcool_files: List[str],
     if not mcool_files:
         raise InputValidationError("No mcool files provided")
     
-    # Validate resolutions
-    if not resolutions:
-        raise InputValidationError("No resolutions provided")
-    if not all(isinstance(r, int) and r > 0 for r in resolutions):
-        raise InputValidationError("Resolutions must be positive integers")
+    # Validate resolution
+    if not isinstance(resolution, int) or resolution <= 0:
+        raise InputValidationError("Resolution must be a positive integer")
     
     # Validate genome version
     if genome and genome not in ["hg38", "hg19"]:
@@ -74,7 +72,7 @@ def validate_inputs(mcool_files: List[str],
         raise InputValidationError(f"Invalid normalization method: {normalization_method}. Must be 'minmax' or 'self'")
 
 def extract_v4c(mcool_files: List[str], 
-                resolutions: List[int], 
+                resolution: int, 
                 coords: Optional[str] = None, 
                 genes: Optional[str] = None, 
                 genome: Optional[str] = None, 
@@ -86,11 +84,11 @@ def extract_v4c(mcool_files: List[str],
                 use_fixed_center: bool = False,
                 output: str = "extracted_data.tsv") -> None:
     """
-    Extracts Virtual 4C contact frequencies from .mcool files at specific resolutions.
+    Extracts Virtual 4C contact frequencies from .mcool files at a specific resolution.
 
     Args:
         mcool_files: List of .mcool files
-        resolutions: List of resolutions to extract
+        resolution: Single resolution to extract
         coords: Genomic coordinates (e.g., "chr17:45878152-46000000")
         genes: Comma-separated gene names to extract promoter coordinates
         genome: Reference genome ("hg38" or "hg19")
@@ -112,7 +110,7 @@ def extract_v4c(mcool_files: List[str],
     """
     try:
         # Validate inputs
-        validate_inputs(mcool_files, resolutions, coords, genes, genome, bed_file, normalization_method)
+        validate_inputs(mcool_files, resolution, coords, genes, genome, bed_file, normalization_method)
         
         # Validate mcool files exist
         valid_mcool_files = validate_mcool_files(mcool_files)
@@ -163,52 +161,51 @@ def extract_v4c(mcool_files: List[str],
         results = []
 
         for mcool in valid_mcool_files:
-            for res in resolutions:
-                try:
-                    c = cooler.Cooler(f"{mcool}::/resolutions/{res}")
-                    for chrom, start, end in promoter_coords:
-                        # Calculate region boundaries
-                        if use_fixed_center:
-                            # Use original code logic: fixed 500kb flanking from TSS
-                            row_bin_start = (start // res) * res
-                            region_start = max(0, row_bin_start - flank)
-                            region_end = row_bin_start + flank
-                        else:
-                            # Use current logic: flanking from TSS region
-                            region_start = max(0, start - flank)
-                            region_end = end + flank
-                        
-                        matrix = c.matrix(balance=balance, sparse=False).fetch((chrom, region_start, region_end))
-                        np.nan_to_num(matrix, copy=False)
+            try:
+                c = cooler.Cooler(f"{mcool}::/resolutions/{resolution}")
+                for chrom, start, end in promoter_coords:
+                    # Calculate region boundaries
+                    if use_fixed_center:
+                        # Use original code logic: fixed 500kb flanking from TSS
+                        row_bin_start = (start // resolution) * resolution
+                        region_start = max(0, row_bin_start - flank)
+                        region_end = row_bin_start + flank
+                    else:
+                        # Use current logic: flanking from TSS region
+                        region_start = max(0, start - flank)
+                        region_end = end + flank
+                    
+                    matrix = c.matrix(balance=balance, sparse=False).fetch((chrom, region_start, region_end))
+                    np.nan_to_num(matrix, copy=False)
 
-                        # Calculate row index
-                        if use_fixed_center:
-                            # Use original code logic: fixed center position
-                            row_index = (flank // res)
-                        else:
-                            # Use current logic: relative to TSS position
-                            row_index = (start // res) - (region_start // res)
-                        
-                        row_values = matrix[row_index, :].tolist()
+                    # Calculate row index
+                    if use_fixed_center:
+                        # Use original code logic: fixed center position
+                        row_index = (flank // resolution)
+                    else:
+                        # Use current logic: relative to TSS position
+                        row_index = (start // resolution) - (region_start // resolution)
+                    
+                    row_values = matrix[row_index, :].tolist()
 
-                        # Apply normalization
-                        if scale:
-                            if normalization_method == "self":
-                                # Original code self-normalization
-                                if row_values[row_index] > 0:
-                                    row_values = [x / row_values[row_index] for x in row_values]
-                                else:
-                                    row_values = [0] * len(row_values)
-                            else:  # minmax normalization
-                                min_val, max_val = np.min(row_values), np.max(row_values)
-                                row_values = [(x - min_val) / (max_val - min_val) if max_val > min_val else 0 for x in row_values]
+                    # Apply normalization
+                    if scale:
+                        if normalization_method == "self":
+                            # Original code self-normalization
+                            if row_values[row_index] > 0:
+                                row_values = [x / row_values[row_index] for x in row_values]
+                            else:
+                                row_values = [0] * len(row_values)
+                        else:  # minmax normalization
+                            min_val, max_val = np.min(row_values), np.max(row_values)
+                            row_values = [(x - min_val) / (max_val - min_val) if max_val > min_val else 0 for x in row_values]
 
-                        genomic_coords = np.arange(region_start, region_end, res)
-                        # Add gene name if available
-                        gene_name = gene_mapping.get((chrom, start, end), "")
-                        results.append([mcool, res, chrom, start, end, gene_name] + row_values)
-                except Exception as e:
-                    raise FileProcessingError(f"Error processing file {mcool} at resolution {res}: {str(e)}")
+                    genomic_coords = np.arange(region_start, region_end, resolution)
+                    # Add gene name if available
+                    gene_name = gene_mapping.get((chrom, start, end), "")
+                    results.append([mcool, resolution, chrom, start, end, gene_name] + row_values)
+            except Exception as e:
+                raise FileProcessingError(f"Error processing file {mcool} at resolution {resolution}: {str(e)}")
 
         try:
             df = pd.DataFrame(results)
@@ -249,7 +246,7 @@ def main():
     """Command line interface for extract_v4c function."""
     parser = argparse.ArgumentParser(description="Extract Virtual 4C contact frequencies from .mcool files")
     parser.add_argument("mcool_files", nargs="+", help="One or more .mcool files")
-    parser.add_argument("--resolutions", nargs="+", type=int, required=True, help="List of resolutions to extract")
+    parser.add_argument("--resolution", type=int, required=True, help="Single resolution to extract")
     parser.add_argument("--coords", help="Genomic coordinates (e.g., 'chr17:45878152-46000000')")
     parser.add_argument("--genes", help="Comma-separated gene names")
     parser.add_argument("--genome", choices=["hg38", "hg19"], help="Reference genome version")
@@ -266,7 +263,7 @@ def main():
     try:
         extract_v4c(
             mcool_files=args.mcool_files,
-            resolutions=args.resolutions,
+            resolution=args.resolution,
             coords=args.coords,
             genes=args.genes,
             genome=args.genome,

@@ -33,7 +33,7 @@ def example_basic_extraction():
     
     # Define input parameters
     mcool_files = ["/path/to/your/sample.mcool"]  # Replace with actual file path
-    resolutions = [5000, 10000, 50000]
+    resolution = 5000
     genes = "MYC,GATA6,KLF5"
     genome = "hg38"
     flank = 500000
@@ -44,7 +44,7 @@ def example_basic_extraction():
         # Extract Virtual 4C data
         extract_v4c(
             mcool_files=mcool_files,
-            resolutions=resolutions,
+            resolution=resolution,
             genes=genes,
             genome=genome,
             flank=flank,
@@ -71,7 +71,7 @@ def example_coordinate_extraction():
     
     # Define input parameters
     mcool_files = ["/path/to/your/sample.mcool"]  # Replace with actual file path
-    resolutions = [10000, 50000]
+    resolution = 10000
     coords = "chr8:127732934-127737934"  # MYC gene region
     genome = "hg38"
     flank = 200000
@@ -82,7 +82,7 @@ def example_coordinate_extraction():
         # Extract Virtual 4C data
         extract_v4c(
             mcool_files=mcool_files,
-            resolutions=resolutions,
+            resolution=resolution,
             coords=coords,
             genome=genome,
             flank=flank,
@@ -113,7 +113,7 @@ chr13	73052476	73057476	KLF5"""
     
     # Define input parameters
     mcool_files = ["/path/to/your/sample.mcool"]  # Replace with actual file path
-    resolutions = [50000]
+    resolution = 50000
     bed_file_path = bed_file
     flank = 100000
     normalization_method = "minmax"
@@ -123,7 +123,7 @@ chr13	73052476	73057476	KLF5"""
         # Extract Virtual 4C data
         extract_v4c(
             mcool_files=mcool_files,
-            resolutions=resolutions,
+            resolution=resolution,
             bed_file=bed_file_path,
             flank=flank,
             normalization_method=normalization_method,
@@ -264,7 +264,7 @@ def example_workflow():
         try:
             extract_v4c(
                 mcool_files=[mcool_file],
-                resolutions=[10000, 50000],
+                resolution=10000,
                 genes="MYC,GATA6",
                 genome="hg38",
                 flank=500000,
@@ -332,8 +332,7 @@ def example_data_analysis():
         
         # Basic statistics
         print(f"✓ Number of genes: {df['gene_name'].nunique()}")
-        print(f"✓ Number of resolutions: {df['res'].nunique()}")
-        print(f"✓ Resolutions: {sorted(df['res'].unique())}")
+        print(f"✓ Resolution: {df['res'].iloc[0]}")
         
         # Get contact frequency columns
         contact_cols = [col for col in df.columns if col not in 

@@ -86,10 +86,6 @@ def compare_v4c(input_files: List[str],
             for _, row in df.iterrows():
                 all_coords.add((row['chrom'], row['start'], row['end']))
         
-        # Use default colors if not provided
-        if colors is None:
-            colors = plt.cm.tab10.colors[:len(input_files)]
-        
         # Create a plot for each coordinate
         print(f"Found {len(all_coords)} coordinates to process: {all_coords}")
         for i, coord in enumerate(all_coords):
@@ -97,8 +93,18 @@ def compare_v4c(input_files: List[str],
             print(f"Processing coordinate {i+1}/{len(all_coords)}: {chrom}:{start}-{end}")
             plt.figure(figsize=figsize)
             
+            # Get all unique mcool files across all dataframes
+            all_mcool_files = set()
+            for df in dfs:
+                all_mcool_files.update(df['mcool'].unique())
+            all_mcool_files = sorted(list(all_mcool_files))
+            
+            # Use default colors if not provided
+            if colors is None:
+                colors = plt.cm.tab10.colors[:len(all_mcool_files)]
+            
             # Plot each dataset for this coordinate
-            for df, color in zip(dfs, colors):
+            for df in dfs:
                 # Filter data for this coordinate
                 coord_data = df[(df['chrom'] == chrom) & (df['start'] == start) & (df['end'] == end)]
                 
@@ -120,6 +126,10 @@ def compare_v4c(input_files: List[str],
                         
                         # Create sample label from mcool filename
                         mcool_filename = os.path.basename(row['mcool'])
+                        
+                        # Get color index for this mcool file
+                        color_index = all_mcool_files.index(row['mcool'])
+                        color = colors[color_index % len(colors)]
                         
                         # Check if user provided custom sample names
                         if sample_names and mcool_filename in sample_names:
